@@ -418,6 +418,9 @@ int floatFloat2Int(unsigned uf) {
   int mask23 = mask31 >> 8;  // 0x007f ffff
   int f = (uf & mask23);
 
+  // forward declare variable to avoid dlc check error:
+  int exp = 0;
+  int n = 0;
 
   // NaN: e == 0xffff and f != 0
   // Infinity: e == 0xffff and f == 0
@@ -445,7 +448,7 @@ int floatFloat2Int(unsigned uf) {
   // if exp < 0, the number's absolute value is smaller than 1.
 
   // get exp
-  int exp = e - 127;  // exp: used in pow(2, exp)
+  exp = e - 127;  // exp: used in pow(2, exp)
   if (exp >= 31)
   {
     return INVALID;
@@ -457,7 +460,7 @@ int floatFloat2Int(unsigned uf) {
   }
 
   // get the unsigned number
-  int n = 1 << exp | f >> (23 - exp);
+  n = 1 << exp | f >> (23 - exp);
 
   // check sign bit
   if (s)
@@ -481,5 +484,32 @@ int floatFloat2Int(unsigned uf) {
  *   Rating: 4
  */
 unsigned floatPower2(int x) {
-    return 2;
+  // sign: always positive.
+  // no need to | sign bit.
+  // int s = 0; 
+
+  // 1. normalized: 0 < e < 255 => -127 < x < 128
+  if ((-127 < x) && (x < 128))
+  {
+    int e = x + 127;
+    return e << 23;
+  }
+  
+  // 2. denormalized: e = 0, use f to extend
+  else if (-149 <= x && x <= -127)
+  {
+    return 1 << (149 + x);
+  }
+
+  // 3. too small:
+  else if (x < -149)
+  {
+    return 0;
+  }
+
+  // 4. too large:
+  else
+  {
+    return 255 << 23;
+  }
 }
